@@ -6,27 +6,14 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f0f0f0;
+  background-color: #222;
 }
 
 .game-container {
-  text-align: center;
+  position: relative;
 }
 
-button {
-  font-size: 20px;
-  padding: 15px 30px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
-p {
-  font-size: 18px;
+canvas {
+  border: 2px solid #fff;
+  background-color: #111;
 }

@@ -1,66 +1,123 @@
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let spaceship = {
+  x: canvas.width / 2,
+  y: canvas.height - 50,
+  width: 50,
+  height: 50,
+  speed: 5
+};
+
+let bullets = [];
+let enemies = [];
 let score = 0;
-let upgradeCost = 10;
-let autoPointsPerSecond = 0;
-let clickValue = 1;
-let timer = 60;
 
-const scoreDisplay = document.getElementById("score");
-const clickButton = document.getElementById("clickButton");
-const upgradeButton = document.getElementById("buyUpgrade");
-const autoPointsDisplay = document.getElementById("autoPoints");
-const timerDisplay = document.getElementById("timer");
+function gameLoop() {
+  setTimeout(function() {
+    clearCanvas();
+    drawSpaceship();
+    drawBullets();
+    drawEnemies();
+    moveBullets();
+    moveEnemies();
+    checkCollisions();
+    drawScore();
+    gameLoop();
+  }, 1000 / 60); // 60 FPS
+}
 
-clickButton.addEventListener("click", () => {
-  score += clickValue;
-  scoreDisplay.textContent = score;
-  adjustDifficulty();
-});
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 
-upgradeButton.addEventListener("click", () => {
-  if (score >= upgradeCost) {
-    score -= upgradeCost;
-    clickValue += 1;
-    upgradeCost = Math.floor(upgradeCost * 1.5);
-    updateUpgradeCost();
+function drawSpaceship() {
+  ctx.fillStyle = "blue";
+  ctx.fillRect(spaceship.x, spaceship.y, spaceship.width, spaceship.height);
+}
+
+function moveSpaceship(event) {
+  const mouseX = event.clientX - canvas.offsetLeft;
+  const mouseY = event.clientY - canvas.offsetTop;
+  spaceship.x = mouseX - spaceship.width / 2;
+  spaceship.y = mouseY - spaceship.height / 2;
+}
+
+function shootBullet() {
+  let bullet = {
+    x: spaceship.x + spaceship.width / 2 - 2.5,
+    y: spaceship.y,
+    width: 5,
+    height: 10,
+    speed: 7
+  };
+  bullets.push(bullet);
+}
+
+function drawBullets() {
+  ctx.fillStyle = "red";
+  bullets.forEach(bullet => {
+    ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+  });
+}
+
+function moveBullets() {
+  bullets.forEach(bullet => {
+    bullet.y -= bullet.speed;
+  });
+  bullets = bullets.filter(bullet => bullet.y > 0); // Remove bullets off-screen
+}
+
+function createEnemy() {
+  let enemy = {
+    x: Math.random() * (canvas.width - 50),
+    y: -50,
+    width: 50,
+    height: 50,
+    speed: 2
+  };
+  enemies.push(enemy);
+}
+
+function drawEnemies() {
+  ctx.fillStyle = "green";
+  enemies.forEach(enemy => {
+    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+  });
+}
+
+function moveEnemies() {
+  enemies.forEach(enemy => {
+    enemy.y += enemy.speed;
+  });
+  enemies = enemies.filter(enemy => enemy.y < canvas.height); // Remove enemies off-screen
+}
+
+function checkCollisions() {
+  bullets.forEach((bullet, bulletIndex) => {
+    enemies.forEach((enemy, enemyIndex) => {
+      if (bullet.x < enemy.x + enemy.width && bullet.x + bullet.width > enemy.x &&
+          bullet.y < enemy.y + enemy.height && bullet.y + bullet.height > enemy.y) {
+        bullets.splice(bulletIndex, 1); // Remove bullet
+        enemies.splice(enemyIndex, 1); // Remove enemy
+        score += 10; // Increase score
+      }
+    });
+  });
+}
+
+function drawScore() {
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+}
+
+document.addEventListener("mousemove", moveSpaceship);
+document.addEventListener("keydown", event => {
+  if (event.key === " ") {
+    shootBullet();
   }
 });
 
-function adjustDifficulty() {
-  if (score > 10 && score <= 30) {
-    clickButton.style.fontSize = "18px";
-    clickButton.style.padding = "12px 24px";
-  } else if (score > 30 && score <= 50) {
-    clickButton.style.fontSize = "16px";
-    clickButton.style.padding = "10px 20px";
-  } else if (score > 50) {
-    clickButton.style.fontSize = "14px";
-    clickButton.style.padding = "8px 16px";
-  }
-}
-
-function updateUpgradeCost() {
-  document.getElementById("upgradeCost").textContent = upgradeCost;
-}
-
-function startAutoPoints() {
-  setInterval(() => {
-    score += autoPointsPerSecond;
-    scoreDisplay.textContent = score;
-    autoPointsDisplay.textContent = "Automatische Punkte: " + autoPointsPerSecond;
-  }, 1000);
-}
-
-function startTimer() {
-  const timerInterval = setInterval(() => {
-    if (timer > 0) {
-      timer--;
-      timerDisplay.textContent = "Zeit: " + timer + "s";
-    } else {
-      clearInterval(timerInterval);
-      alert("Spiel beendet! Dein Punktestand: " + score);
-    }
-  }, 1000);
-}
-
-startAutoPoints();
-startTimer();
+setInterval(createEnemy, 1000); // Create an enemy every second
+gameLoop();
