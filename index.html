@@ -3,13 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Klickspiel</title>
+  <title>Clicker Game</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Klickspiel</h1>
-  <button id="button">Klick mich!</button>
-  <div id="score">Punkte: 0</div>
+  <div class="game-container">
+    <h1>Clicker Game</h1>
+    <p>Punkte: <span id="score">0</span></p>
+    <p>Upgrade Kosten: <span id="upgradeCost">10</span> Punkte</p>
+    <button id="clickButton">Klicke mich!</button>
+    <button id="buyUpgrade">Upgrade kaufen</button>
+    <p id="autoPoints">Automatische Punkte: 0</p>
+    <p id="timer">Zeit: 60s</p>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
