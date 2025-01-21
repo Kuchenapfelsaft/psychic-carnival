@@ -189,4 +189,30 @@ function drawScore() {
 
 function drawLives() {
   ctx.fillStyle = "white";
-  ctx.font = "
+  ctx.font = "20px Arial";
+  ctx.fillText("Lives: " + spaceship.lives, canvas.width - 100, 30);
+}
+
+function levelUp() {
+  if (score >= level * 100) {
+    level++;
+    enemySpawnRate = Math.max(500, enemySpawnRate - 200);
+    clearInterval(enemySpawnInterval);
+    enemySpawnInterval = setInterval(createEnemy, enemySpawnRate);
+  }
+}
+
+function gameOver() {
+  gameRunning = false;
+  alert("Game Over! Dein Score: " + score);
+  window.location.reload();
+}
+
+document.addEventListener("mousemove", moveSpaceship);
+document.addEventListener("keydown", event => {
+  if (event.key === " ") shootBullet();
+});
+
+let enemySpawnInterval = setInterval(createEnemy, enemySpawnRate);
+setInterval(createPowerUp, 10000); // Power-Up alle 10 Sekunden
+gameLoop();
