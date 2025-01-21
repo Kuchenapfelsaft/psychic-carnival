@@ -3,10 +3,10 @@ body {
   margin: 0;
   padding: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 100vh;
   background-color: #222;
+  color: white;
 }
 
 .game-container {
@@ -16,5 +16,28 @@ body {
 canvas {
   border: 2px solid #fff;
   background-color: #111;
+  display: block;
+  margin-bottom: 10px;
 }
 
+#shop {
+  background-color: #333;
+  padding: 10px;
+  border: 2px solid #fff;
+  width: 300px;
+  text-align: center;
+}
+
+#shop button {
+  background-color: #555;
+  color: white;
+  border: none;
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+#shop button:disabled {
+  background-color: #777;
+  cursor: not-allowed;
+}

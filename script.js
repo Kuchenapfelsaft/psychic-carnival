@@ -8,6 +8,7 @@ let spaceship = {
   height: 50,
   speed: 5,
   lives: 3,
+  coins: 0,
   canShoot: true,
   shootCooldown: 500
 };
@@ -15,11 +16,32 @@ let spaceship = {
 let bullets = [];
 let enemies = [];
 let enemyBullets = [];
-let powerUps = [];
 let score = 0;
 let level = 1;
 let enemySpawnRate = 2000; // In Millisekunden
 let gameRunning = true;
+
+document.getElementById("buyLife").addEventListener("click", () => {
+  if (spaceship.coins >= 50) {
+    spaceship.coins -= 50;
+    spaceship.lives++;
+    updateShop();
+  }
+});
+
+document.getElementById("buySpeed").addEventListener("click", () => {
+  if (spaceship.coins >= 100) {
+    spaceship.coins -= 100;
+    spaceship.shootCooldown = Math.max(200, spaceship.shootCooldown - 100);
+    updateShop();
+  }
+});
+
+function updateShop() {
+  document.getElementById("coins").innerText = spaceship.coins;
+  document.getElementById("buyLife").disabled = spaceship.coins < 50;
+  document.getElementById("buySpeed").disabled = spaceship.coins < 100;
+}
 
 function gameLoop() {
   if (!gameRunning) return;
@@ -28,14 +50,13 @@ function gameLoop() {
   drawBullets();
   drawEnemies();
   drawEnemyBullets();
-  drawPowerUps();
   moveBullets();
   moveEnemies();
   moveEnemyBullets();
-  movePowerUps();
   checkCollisions();
   drawScore();
   drawLives();
+  drawLevel();
   levelUp();
   requestAnimationFrame(gameLoop);
 }
@@ -50,8 +71,18 @@ function drawSpaceship() {
 }
 
 function moveSpaceship(event) {
-  const mouseX = event.clientX - canvas.offsetLeft;
-  spaceship.x = Math.max(0, Math.min(canvas.width - spaceship.width, mouseX - spaceship.width / 2));
+  if (event.key === "ArrowLeft" || event.key === "a") {
+    spaceship.x = Math.max(0, spaceship.x - spaceship.speed);
+  }
+  if (event.key === "ArrowRight" || event.key === "d") {
+    spaceship.x = Math.min(canvas.width - spaceship.width, spaceship.x + spaceship.speed);
+  }
+  if (event.key === "ArrowUp" || event.key === "w") {
+    spaceship.y = Math.max(0, spaceship.y - spaceship.speed);
+  }
+  if (event.key === "ArrowDown" || event.key === "s") {
+    spaceship.y = Math.min(canvas.height - spaceship.height, spaceship.y + spaceship.speed);
+  }
 }
 
 function shootBullet() {
@@ -87,7 +118,7 @@ function createEnemy() {
     width: 50,
     height: 50,
     speed: 2 + level * 0.5,
-    canShoot: Math.random() < 0.5
+    isAlive: true
   };
   enemies.push(enemy);
 }
@@ -100,84 +131,27 @@ function drawEnemies() {
 function moveEnemies() {
   enemies.forEach(enemy => {
     enemy.y += enemy.speed;
-    if (enemy.canShoot && Math.random() < 0.01) shootEnemyBullet(enemy);
   });
-  enemies = enemies.filter(enemy => enemy.y < canvas.height);
-}
-
-function shootEnemyBullet(enemy) {
-  let bullet = {
-    x: enemy.x + enemy.width / 2 - 2.5,
-    y: enemy.y + enemy.height,
-    width: 5,
-    height: 10,
-    speed: 3
-  };
-  enemyBullets.push(bullet);
-}
-
-function drawEnemyBullets() {
-  ctx.fillStyle = "yellow";
-  enemyBullets.forEach(bullet => ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height));
-}
-
-function moveEnemyBullets() {
-  enemyBullets.forEach(bullet => (bullet.y += bullet.speed));
-  enemyBullets = enemyBullets.filter(bullet => bullet.y < canvas.height);
-}
-
-function createPowerUp() {
-  let powerUp = {
-    x: Math.random() * (canvas.width - 30),
-    y: -30,
-    width: 30,
-    height: 30,
-    type: Math.random() < 0.5 ? "life" : "speed",
-    speed: 2
-  };
-  powerUps.push(powerUp);
-}
-
-function drawPowerUps() {
-  powerUps.forEach(powerUp => {
-    ctx.fillStyle = powerUp.type === "life" ? "pink" : "cyan";
-    ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
-  });
-}
-
-function movePowerUps() {
-  powerUps.forEach(powerUp => (powerUp.y += powerUp.speed));
-  powerUps = powerUps.filter(powerUp => powerUp.y < canvas.height);
+  enemies = enemies.filter(enemy => enemy.y < canvas.height && enemy.isAlive);
 }
 
 function checkCollisions() {
   bullets.forEach((bullet, bulletIndex) => {
     enemies.forEach((enemy, enemyIndex) => {
-      if (bullet.x < enemy.x + enemy.width && bullet.x + bullet.width > enemy.x &&
-          bullet.y < enemy.y + enemy.height && bullet.y + bullet.height > enemy.y) {
+      if (
+        bullet.x < enemy.x + enemy.width &&
+        bullet.x + bullet.width > enemy.x &&
+        bullet.y < enemy.y + enemy.height &&
+        bullet.y + bullet.height > enemy.y
+      ) {
         bullets.splice(bulletIndex, 1);
+        enemy.isAlive = false;
         enemies.splice(enemyIndex, 1);
         score += 10;
+        spaceship.coins += 5;
+        updateShop();
       }
     });
-  });
-
-  enemyBullets.forEach((bullet, bulletIndex) => {
-    if (bullet.x < spaceship.x + spaceship.width && bullet.x + bullet.width > spaceship.x &&
-        bullet.y < spaceship.y + spaceship.height && bullet.y + bullet.height > spaceship.y) {
-      enemyBullets.splice(bulletIndex, 1);
-      spaceship.lives--;
-      if (spaceship.lives <= 0) gameOver();
-    }
-  });
-
-  powerUps.forEach((powerUp, powerUpIndex) => {
-    if (powerUp.x < spaceship.x + spaceship.width && powerUp.x + powerUp.width > spaceship.x &&
-        powerUp.y < spaceship.y + spaceship.height && powerUp.y + powerUp.height > spaceship.y) {
-      powerUps.splice(powerUpIndex, 1);
-      if (powerUp.type === "life") spaceship.lives++;
-      if (powerUp.type === "speed") spaceship.shootCooldown = Math.max(200, spaceship.shootCooldown - 100);
-    }
   });
 }
 
@@ -190,14 +164,20 @@ function drawScore() {
 function drawLives() {
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
-  ctx.fillText("Lives: " + spaceship.lives, canvas.width - 100, 30);
+  ctx.fillText("Leben: " + spaceship.lives, 10, 60);
+}
+
+function drawLevel() {
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Welle: " + level, 10, 90);
 }
 
 function levelUp() {
   if (score >= level * 100) {
     level++;
-    enemySpawnRate = Math.max(500, enemySpawnRate - 200);
     clearInterval(enemySpawnInterval);
+    enemySpawnRate = Math.max(500, enemySpawnRate - 200);
     enemySpawnInterval = setInterval(createEnemy, enemySpawnRate);
   }
 }
@@ -208,11 +188,10 @@ function gameOver() {
   window.location.reload();
 }
 
-document.addEventListener("mousemove", moveSpaceship);
+document.addEventListener("keydown", moveSpaceship);
 document.addEventListener("keydown", event => {
   if (event.key === " ") shootBullet();
 });
 
 let enemySpawnInterval = setInterval(createEnemy, enemySpawnRate);
-setInterval(createPowerUp, 10000); // Power-Up alle 10 Sekunden
 gameLoop();
