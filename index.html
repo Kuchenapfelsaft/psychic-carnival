@@ -1,21 +1,176 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verbesserter Shooter</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Shooter Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-  <div class="game-container">
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="shop">
-      <h2>Shop</h2>
-      <p>Münzen: <span id="coins">0</span></p>
-      <button id="buyLife">+1 Leben (50 Münzen)</button>
-      <button id="buySpeed">Schneller schießen (100 Münzen)</button>
-    </div>
-  </div>
-  <script src="script.js"></script>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 800;
+        canvas.height = 600;
+
+        // Load images
+        const playerImg = new Image();
+        playerImg.src = "assets/player.png";
+
+        const enemyImg = new Image();
+        enemyImg.src = "assets/enemy.png";
+
+        const bulletImg = new Image();
+        bulletImg.src = "assets/bullet.png";
+
+        const backgroundImg = new Image();
+        backgroundImg.src = "assets/background.png";
+
+        // Game variables
+        let keys = {};
+        let player = { x: 400, y: 500, width: 50, height: 50, speed: 5, health: 100, coins: 0 };
+        let bullets = [];
+        let enemies = [];
+        let wave = 1;
+        let shopItems = [
+            { name: "Speed Boost", cost: 10, effect: () => player.speed += 1 },
+            { name: "Health Pack", cost: 15, effect: () => player.health = Math.min(player.health + 20, 100) },
+            { name: "Extra Damage", cost: 20, effect: () => bulletDamage += 1 }
+        ];
+        let bulletDamage = 1;
+        let cooldown = 0;
+
+        // Event listeners
+        window.addEventListener("keydown", (e) => keys[e.key] = true);
+        window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+        // Spawn enemies
+        function spawnEnemies() {
+            for (let i = 0; i < wave * 5; i++) {
+                enemies.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * 200 - 200,
+                    width: 40,
+                    height: 40,
+                    speed: 1 + wave * 0.2
+                });
+            }
+        }
+
+        // Draw shop
+        function drawShop() {
+            ctx.fillStyle = "white";
+            ctx.font = "16px Arial";
+            ctx.fillText("Shop (Press S):", 10, 20);
+            shopItems.forEach((item, index) => {
+                ctx.fillText(`${index + 1}. ${item.name} - ${item.cost} Coins`, 10, 40 + index * 20);
+            });
+        }
+
+        // Update game
+        function update() {
+            // Player movement
+            if (keys["w"] && player.y > 0) player.y -= player.speed;
+            if (keys["s"] && player.y < canvas.height - player.height) player.y += player.speed;
+            if (keys["a"] && player.x > 0) player.x -= player.speed;
+            if (keys["d"] && player.x < canvas.width - player.width) player.x += player.speed;
+
+            // Shooting
+            if (keys[" "] && cooldown === 0) {
+                bullets.push({ x: player.x + player.width / 2 - 5, y: player.y, width: 10, height: 20 });
+                cooldown = 20;
+            }
+            if (cooldown > 0) cooldown--;
+
+            // Update bullets
+            bullets = bullets.filter(bullet => bullet.y > 0);
+            bullets.forEach(bullet => {
+                bullet.y -= 10;
+            });
+
+            // Update enemies
+            enemies.forEach(enemy => {
+                enemy.y += enemy.speed;
+                if (enemy.y > canvas.height) {
+                    player.health -= 10;
+                    enemy.y = -50;
+                    enemy.x = Math.random() * canvas.width;
+                }
+            });
+
+            // Check collisions
+            bullets.forEach((bullet, bIndex) => {
+                enemies.forEach((enemy, eIndex) => {
+                    if (
+                        bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y
+                    ) {
+                        enemies.splice(eIndex, 1);
+                        bullets.splice(bIndex, 1);
+                        player.coins += 1;
+                    }
+                });
+            });
+
+            // Check wave
+            if (enemies.length === 0) {
+                wave++;
+                spawnEnemies();
+            }
+        }
+
+        // Draw game
+        function draw() {
+            // Background
+            ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+
+            // Player
+            ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+
+            // Bullets
+            bullets.forEach(bullet => {
+                ctx.drawImage(bulletImg, bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+
+            // Enemies
+            enemies.forEach(enemy => {
+                ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.width, enemy.height);
+            });
+
+            // UI
+            ctx.fillStyle = "white";
+            ctx.font = "16px Arial";
+            ctx.fillText(`Health: ${player.health}`, 10, canvas.height - 40);
+            ctx.fillText(`Coins: ${player.coins}`, 10, canvas.height - 20);
+            ctx.fillText(`Wave: ${wave}`, canvas.width - 100, 20);
+        }
+
+        // Game loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            update();
+            draw();
+            drawShop();
+            requestAnimationFrame(gameLoop);
+        }
+
+        spawnEnemies();
+        gameLoop();
+    </script>
 </body>
 </html>
