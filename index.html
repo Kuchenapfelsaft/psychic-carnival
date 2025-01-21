@@ -26,19 +26,6 @@
         canvas.width = 800;
         canvas.height = 600;
 
-        // Load images
-        const playerImg = new Image();
-        playerImg.src = "assets/player.png";
-
-        const enemyImg = new Image();
-        enemyImg.src = "assets/enemy.png";
-
-        const bulletImg = new Image();
-        bulletImg.src = "assets/bullet.png";
-
-        const backgroundImg = new Image();
-        backgroundImg.src = "assets/background.png";
-
         // Game variables
         let keys = {};
         let player = { x: 400, y: 500, width: 50, height: 50, speed: 5, health: 100, coins: 0 };
@@ -65,7 +52,8 @@
                     y: Math.random() * 200 - 200,
                     width: 40,
                     height: 40,
-                    speed: 1 + wave * 0.2
+                    speed: 1 + wave * 0.2,
+                    health: 3
                 });
             }
         }
@@ -120,9 +108,12 @@
                         bullet.y < enemy.y + enemy.height &&
                         bullet.y + bullet.height > enemy.y
                     ) {
-                        enemies.splice(eIndex, 1);
+                        enemy.health -= bulletDamage;
+                        if (enemy.health <= 0) {
+                            enemies.splice(eIndex, 1);
+                            player.coins += 1;
+                        }
                         bullets.splice(bIndex, 1);
-                        player.coins += 1;
                     }
                 });
             });
@@ -137,19 +128,30 @@
         // Draw game
         function draw() {
             // Background
-            ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#001d3d";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Player
-            ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+            ctx.fillStyle = "#00ff00";
+            ctx.beginPath();
+            ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 25, 0, Math.PI * 2);
+            ctx.fill();
 
             // Bullets
+            ctx.fillStyle = "#ffff00";
             bullets.forEach(bullet => {
-                ctx.drawImage(bulletImg, bullet.x, bullet.y, bullet.width, bullet.height);
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
             });
 
             // Enemies
+            ctx.fillStyle = "#ff0000";
             enemies.forEach(enemy => {
-                ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.width, enemy.height);
+                ctx.beginPath();
+                ctx.rect(enemy.x, enemy.y, enemy.width, enemy.height);
+                ctx.fill();
+                ctx.fillStyle = "white";
+                ctx.font = "10px Arial";
+                ctx.fillText(`HP: ${enemy.health}`, enemy.x + 5, enemy.y + 15);
             });
 
             // UI
